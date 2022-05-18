@@ -1,0 +1,14 @@
+{
+  "workbench.colorCustomizations": {
+    "titleBar.activeForeground": "#fff",
+    "titleBar.inactiveForeground": "#d4c8b2cc",
+    "titleBar.activeBackground": "#88745a",
+    "titleBar.inactiveBackground": "#b46e3fcc"
+  },
+  "editor.formatOnSave": true,
+  "eslint.validate": ["javascript", "typescript"],
+  "eslint.alwaysShowStatus": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": true
+  }
+}

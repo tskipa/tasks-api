@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es6",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "lib": ["es6"],
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["*/**.ts", "index.ts"]
+}

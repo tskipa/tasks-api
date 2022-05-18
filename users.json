@@ -1,0 +1,25 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "name": "levan",
+      "email": "levan@email.com",
+      "password": "levan",
+      "role": "admin"
+    },
+    {
+      "id": 2,
+      "name": "bako",
+      "email": "bako@email.com",
+      "password": "bako",
+      "role": "editor"
+    },
+    {
+      "id": 3,
+      "name": "temo",
+      "email": "temo@email.com",
+      "password": "temo",
+      "role": "subscriber"
+    }
+  ]
+}
