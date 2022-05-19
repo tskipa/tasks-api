@@ -14,7 +14,6 @@ interface User {
 const server = create();
 const mainRouter = router("db.json");
 const db = JSON.parse(fs.readFileSync("db.json", { encoding: "utf-8" }));
-console.log(db);
 
 server.use(defaults());
 server.use(urlencoded({ extended: true }));
@@ -74,7 +73,7 @@ server.post("/api/auth/register", (req, res) => {
     user = newUser;
   });
   const access_token = createToken({ email, password });
-  res.status(200).json({ access_token, userId: user.id });
+  res.status(200).json({ token: access_token, ...user, password: null });
 });
 
 server.post("/api/auth/login", (req, res) => {
@@ -87,7 +86,7 @@ server.post("/api/auth/login", (req, res) => {
     return;
   }
   const access_token = createToken({ email, password });
-  res.status(200).json({ access_token, userId: user.id });
+  res.status(200).json({ token: access_token, ...user, password: null });
 });
 
 server.use(/^(?!\/auth).*$/, (req, res, next) => {
@@ -112,7 +111,7 @@ server.use(/^(?!\/auth).*$/, (req, res, next) => {
     next();
   } catch (err) {
     const status = 401;
-    const message = "Error access_token is revoked";
+    const message = "Access token is revoked";
     res.status(status).json({ status, message });
   }
 });
