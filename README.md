@@ -35,5 +35,5 @@ with the email and password object. The response will contain
 You should send this token with any request to the protected endpoints
 
 ```
-$ curl 'http://localhost:3000/tasks' -H 'Authorization: Bearer <ACCESS_TOKEN>'
+$ curl 'http://localhost:3000/api/tasks' -H 'Authorization: Bearer <ACCESS_TOKEN>'
 ```

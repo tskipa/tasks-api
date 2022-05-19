@@ -4,7 +4,7 @@
       "id": 1,
       "name": "task001",
       "description": "description for task001",
-      "user": 1,
+      "userId": 1,
       "creation_date": "18-05-2022",
       "status": "done",
       "category": "default"
@@ -13,7 +13,7 @@
       "id": 2,
       "name": "task002",
       "description": "description for task002",
-      "user": 1,
+      "userId": 1,
       "creation_date": "18-05-2022",
       "status": "todo",
       "category": "default"
@@ -22,10 +22,33 @@
       "id": 3,
       "name": "task003",
       "description": "description for task003",
-      "user": 2,
+      "userId": 2,
       "creation_date": "19-05-2022",
       "status": "todo",
       "category": "urgent"
+    }
+  ],
+  "users": [
+    {
+      "id": 1,
+      "name": "levan",
+      "email": "levan@email.com",
+      "password": "levan",
+      "role": "admin"
+    },
+    {
+      "id": 2,
+      "name": "bako",
+      "email": "bako@email.com",
+      "password": "bako",
+      "role": "editor"
+    },
+    {
+      "id": 3,
+      "name": "temo",
+      "email": "temo@email.com",
+      "password": "temo",
+      "role": "subscriber"
     }
   ]
 }

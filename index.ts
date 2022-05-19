@@ -4,6 +4,7 @@ import { create, defaults, router } from "json-server";
 import jwt from "jsonwebtoken";
 
 interface User {
+  id: number;
   name: string;
   email: string;
   password?: string;
@@ -12,9 +13,8 @@ interface User {
 
 const server = create();
 const mainRouter = router("db.json");
-const userdb = JSON.parse(
-  fs.readFileSync("./users.json", { encoding: "utf-8" })
-);
+const db = JSON.parse(fs.readFileSync("db.json", { encoding: "utf-8" }));
+console.log(db);
 
 server.use(defaults());
 server.use(urlencoded({ extended: true }));
@@ -33,28 +33,23 @@ function verifyToken(token: string) {
   );
 }
 
-function isAuthenticated({ email, password }) {
-  return (
-    userdb.users.findIndex(
-      (user: Partial<User>) =>
-        user.email === email && user.password === password
-    ) !== -1
+function getUser({ email, password }) {
+  return db.users.find(
+    (user: Partial<User>) => user.email === email && user.password === password
   );
 }
 
 server.post("/api/auth/register", (req, res) => {
-  console.log("register endpoint called; request body:");
-  console.log(req.body);
   const { email, password } = req.body;
-
-  if (isAuthenticated({ email, password }) === true) {
+  let user = getUser({ email, password });
+  if (user) {
     const status = 401;
     const message = "Email and Password already exist";
     res.status(status).json({ status, message });
     return;
   }
 
-  fs.readFile("./users.json", (err, payload) => {
+  fs.readFile("db.json", (err, payload) => {
     if (err) {
       const status = 401;
       const message = err;
@@ -62,12 +57,13 @@ server.post("/api/auth/register", (req, res) => {
       return;
     }
 
-    let data = JSON.parse(payload.toString());
-    let lastItemId = data.users[data.users.length - 1].id;
+    const data = JSON.parse(payload.toString());
+    const lastItemId = data.users[data.users.length - 1].id;
+    const newUser = { id: lastItemId + 1, email: email, password: password };
 
-    data.users.push({ id: lastItemId + 1, email: email, password: password });
+    data.users.push(newUser);
 
-    fs.writeFile("./users.json", JSON.stringify(data), (err) => {
+    fs.writeFile("db.json", JSON.stringify(data), (err) => {
       if (err) {
         const status = 401;
         const message = err;
@@ -75,25 +71,23 @@ server.post("/api/auth/register", (req, res) => {
         return;
       }
     });
+    user = newUser;
   });
   const access_token = createToken({ email, password });
-  console.log("Access Token:" + access_token);
-  res.status(200).json({ access_token });
+  res.status(200).json({ access_token, userId: user.id });
 });
 
 server.post("/api/auth/login", (req, res) => {
-  console.log("login endpoint called; request body:");
-  console.log(req.body);
   const { email, password } = req.body;
-  if (isAuthenticated({ email, password }) === false) {
+  const user = getUser({ email, password });
+  if (!user) {
     const status = 401;
     const message = "Incorrect email or password";
     res.status(status).json({ status, message });
     return;
   }
   const access_token = createToken({ email, password });
-  console.log("Access Token:" + access_token);
-  res.status(200).json({ access_token });
+  res.status(200).json({ access_token, userId: user.id });
 });
 
 server.use(/^(?!\/auth).*$/, (req, res, next) => {
@@ -121,11 +115,6 @@ server.use(/^(?!\/auth).*$/, (req, res, next) => {
     const message = "Error access_token is revoked";
     res.status(status).json({ status, message });
   }
-});
-
-server.get("/api/verifyUser", (_req, res) => {
-  console.log("Cheking if token is valid");
-  res.status(200).json(true);
 });
 
 server.use("/api", mainRouter);
