@@ -1,4 +1,4 @@
-import fs from "fs";
+import { promises } from "fs";
 import { json, urlencoded } from "body-parser";
 import { create, defaults, router } from "json-server";
 import jwt from "jsonwebtoken";
@@ -12,8 +12,7 @@ interface User {
 }
 
 const server = create();
-const mainRouter = router("db.json");
-const db = JSON.parse(fs.readFileSync("db.json", { encoding: "utf-8" }));
+const dbRouter = router("db.json");
 
 server.use(defaults());
 server.use(urlencoded({ extended: true }));
@@ -32,58 +31,60 @@ function verifyToken(token: string) {
   );
 }
 
-function getUser({ email, password }) {
-  return db.users.find(
+async function getUser({ email, password }) {
+  const db = await promises.readFile("users.json");
+  const data = JSON.parse(db.toString());
+  return data.users.find(
     (user: Partial<User>) => user.email === email && user.password === password
   );
 }
 
-server.post("/api/auth/register", (req, res) => {
-  const { email, password } = req.body;
-  let user = getUser({ email, password });
+async function getUserById({ id }) {
+  const db = await promises.readFile("users.json");
+  const data = JSON.parse(db.toString());
+  return data.users.find((user: Partial<User>) => user.id === id);
+}
+
+async function verifyEmail({ email }) {
+  const db = await promises.readFile("users.json");
+  const data = JSON.parse(db.toString());
+  return data.users.find((user: Partial<User>) => user.email === email);
+}
+
+function errorResponse(res: any, status: number, message: string) {
+  res.status(status).json({ status, message });
+}
+
+server.post("/api/auth/register", async (req, res) => {
+  const { email, password, ...rest } = req.body;
+  delete rest.confirmPassword;
+  const user = await verifyEmail({ email });
   if (user) {
-    const status = 401;
-    const message = "Email and Password already exist";
-    res.status(status).json({ status, message });
-    return;
+    return errorResponse(res, 401, "Email already exists");
   }
-
-  fs.readFile("db.json", (err, payload) => {
-    if (err) {
-      const status = 401;
-      const message = err;
-      res.status(status).json({ status, message });
-      return;
-    }
-
-    const data = JSON.parse(payload.toString());
+  try {
+    const db = await promises.readFile("users.json");
+    const data = JSON.parse(db.toString());
     const lastItemId = data.users[data.users.length - 1].id;
-    const newUser = { id: lastItemId + 1, email: email, password: password };
-
+    const newUser = { id: lastItemId + 1, email, password, ...rest };
     data.users.push(newUser);
-
-    fs.writeFile("db.json", JSON.stringify(data), (err) => {
-      if (err) {
-        const status = 401;
-        const message = err;
-        res.status(status).json({ status, message });
-        return;
-      }
-    });
-    user = newUser;
-  });
-  const access_token = createToken({ email, password });
-  res.status(200).json({ token: access_token, ...user, password: null });
+    try {
+      await promises.writeFile("users.json", JSON.stringify(data));
+      const access_token = createToken({ email, password });
+      res.status(200).json({ token: access_token, ...newUser, password: null });
+    } catch (error) {
+      return errorResponse(res, 401, error);
+    }
+  } catch (error) {
+    return errorResponse(res, 401, error);
+  }
 });
 
-server.post("/api/auth/login", (req, res) => {
+server.post("/api/auth/login", async (req, res) => {
   const { email, password } = req.body;
-  const user = getUser({ email, password });
+  const user = await getUser({ email, password });
   if (!user) {
-    const status = 401;
-    const message = "Incorrect email or password";
-    res.status(status).json({ status, message });
-    return;
+    return errorResponse(res, 401, "Incorrect email or password");
   }
   const access_token = createToken({ email, password });
   res.status(200).json({ token: access_token, ...user, password: null });
@@ -94,29 +95,44 @@ server.use(/^(?!\/auth).*$/, (req, res, next) => {
     req.headers.authorization === undefined ||
     req.headers.authorization.split(" ")[0] !== "Bearer"
   ) {
-    const status = 401;
-    const message = "Error in authorization format";
-    res.status(status).json({ status, message });
-    return;
+    return errorResponse(res, 401, "Error in authorization format");
   }
   try {
-    let verifyTokenResult: any;
-    verifyTokenResult = verifyToken(req.headers.authorization.split(" ")[1]);
-    if (verifyTokenResult instanceof Error) {
-      const status = 401;
-      const message = "Access token not provided";
-      res.status(status).json({ status, message });
-      return;
+    const verifyTokenResult = verifyToken(
+      req.headers.authorization.split(" ")[1]
+    );
+    if ((verifyTokenResult as any) instanceof Error) {
+      return errorResponse(res, 401, "Access token not provided");
     }
     next();
-  } catch (err) {
-    const status = 401;
-    const message = "Access token is revoked";
-    res.status(status).json({ status, message });
+  } catch (_error) {
+    return errorResponse(res, 401, "Access token is revoked");
   }
 });
 
-server.use("/api", mainRouter);
+server.post("/api/user", async (req, res) => {
+  try {
+    const user = await getUserById(req.body);
+    if (!user) {
+      return errorResponse(res, 404, "User Can't be found");
+    }
+    res.status(200).json({ ...user, password: null });
+  } catch (error) {
+    return errorResponse(res, 404, error);
+  }
+});
+
+server.get("/api/users", async (_req, res) => {
+  try {
+    const db = await promises.readFile("users.json");
+    const data = JSON.parse(db.toString());
+    res.status(200).json(data.users);
+  } catch (error) {
+    return errorResponse(res, 404, error);
+  }
+});
+
+server.use("/api", dbRouter);
 
 server.listen(3000, () => {
   console.log("Runing Server on Port 3000");

@@ -24,31 +24,8 @@
       "description": "description for task003",
       "userId": 2,
       "creation_date": "19-05-2022",
-      "status": "todo",
+      "status": "done",
       "category": "urgent"
-    }
-  ],
-  "users": [
-    {
-      "id": 1,
-      "name": "levan",
-      "email": "levan@email.com",
-      "password": "levan",
-      "role": "admin"
-    },
-    {
-      "id": 2,
-      "name": "bako",
-      "email": "bako@email.com",
-      "password": "bako",
-      "role": "editor"
-    },
-    {
-      "id": 3,
-      "name": "temo",
-      "email": "temo@email.com",
-      "password": "temo",
-      "role": "subscriber"
     }
   ]
 }
